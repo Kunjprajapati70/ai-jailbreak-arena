@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -5,12 +6,12 @@ const path = require("path");
 const fs = require("fs");
 const app = express();
 const API_KEY = process.env.GROQ_API_KEY;
+const SECRET = process.env.SECRET;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const SECRET = "KRYPTON_2026";
 const DATA_FILE = path.join(__dirname, "data.json");
 
 // Initialize data file if it doesn't exist
@@ -321,3 +322,5 @@ app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
     console.log("👑 Admin Panel: http://localhost:3000/admin");
     console.log("🏆 Public Leaderboard: http://localhost:3000/leaderboard");
 });
+
+console.log(API_KEY);
