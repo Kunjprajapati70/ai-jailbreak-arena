@@ -1,4 +1,6 @@
+node_modules/
 .env
 .ENV
-node_modules/
 data.json
+*.log
+npm-debug.log*
