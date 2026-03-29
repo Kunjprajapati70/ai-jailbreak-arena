@@ -1,12 +1,11 @@
-// MATRIX BG (same as admin panel)
-const canvas = document.getElementById("matrixCanvas");
-const ctx = canvas.getContext("2d");
-
-const letters  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@$#%&*";
-const fontSize  = 16;
-const colors    = ["#15ff00", "#00ff88"];
-let columns     = 0;
-let drops       = [];
+// ── Matrix Background ─────────────────────────────────────────
+const canvas  = document.getElementById("matrixCanvas");
+const ctx     = canvas.getContext("2d");
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@$#%&*";
+const fontSize = 16;
+const colors  = ["#15ff00", "#00ff88"];
+let columns   = 0;
+let drops     = [];
 
 function resizeCanvas() {
     canvas.height = window.innerHeight;
@@ -28,121 +27,157 @@ function drawMatrix() {
     }
 }
 setInterval(drawMatrix, 35);
-
 window.addEventListener("resize", resizeCanvas);
 
-// Leaderboard functions
+// ── Helpers ───────────────────────────────────────────────────
+function escapeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+}
+
+function formatTime(seconds) {
+    if (seconds == null || isNaN(seconds)) return "—";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// ── Load Leaderboard ──────────────────────────────────────────
 async function loadLeaderboard() {
+    const syncEl = document.getElementById("syncIndicator");
+    syncEl.classList.add("active");
+
+    const podiumSection   = document.getElementById("podiumSection");
+    const podiumContainer = document.getElementById("podiumContainer");
+    const lbTableSection  = document.getElementById("lbTableSection");
     const leaderboardBody = document.getElementById("leaderboardBody");
-    
+    const noDataState     = document.getElementById("noDataState");
+
+    // Reset visibility
+    podiumSection.style.display  = "none";
+    lbTableSection.style.display = "none";
+    noDataState.style.display    = "none";
+
     try {
-        const response = await fetch("/api/leaderboard");
+        const response    = await fetch("/api/leaderboard");
         const leaderboard = await response.json();
-        
-        leaderboardBody.innerHTML = "";
-        
+
         if (leaderboard.length === 0) {
-            leaderboardBody.innerHTML = '<div class="lb-empty">🏆 No breaches recorded yet. Be the first agent! 🏆</div>';
+            noDataState.style.display = "block";
             updateStats([]);
-        } else {
-            leaderboard.forEach((entry, index) => {
+            return;
+        }
+
+        // Podium — top 1–3
+        const top3 = leaderboard.slice(0, 3);
+        const rest = leaderboard.slice(3);
+
+        podiumSection.style.display = "flex";
+        renderPodium(top3, podiumContainer);
+
+        // Table — rank 4+
+        if (rest.length > 0) {
+            lbTableSection.style.display = "block";
+            leaderboardBody.innerHTML = "";
+            rest.forEach((entry, index) => {
                 const row = document.createElement("div");
                 row.className = "lb-row";
-                row.style.animationDelay = `${index * 0.1}s`;
-                
-                if (index === 0) row.classList.add("top-1");
-                else if (index === 1) row.classList.add("top-2");
-                else if (index === 2) row.classList.add("top-3");
-                
+                row.style.animationDelay = `${index * 0.08}s`;
                 const date = new Date(entry.timestamp);
-                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                let rankDisplay = `#${index + 1}`;
-                if (index === 0) rankDisplay = "🥇 #1";
-                else if (index === 1) rankDisplay = "🥈 #2";
-                else if (index === 2) rankDisplay = "🥉 #3";
-                
+                const fmtDate = date.toLocaleDateString() + " " +
+                    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 row.innerHTML = `
-                    <div class="lb-col lb-col-rank">${rankDisplay}</div>
+                    <div class="lb-col lb-col-rank">#${index + 4}</div>
                     <div class="lb-col lb-col-team">${escapeHTML(entry.teamId)}</div>
                     <div class="lb-col lb-col-attempts">${entry.attemptsUsed} / 15</div>
                     <div class="lb-col lb-col-time">${formatTime(entry.timeTaken)}</div>
-                    <div class="lb-col lb-col-date">${formattedDate}</div>
+                    <div class="lb-col lb-col-date">${fmtDate}</div>
                 `;
-                
                 leaderboardBody.appendChild(row);
             });
-            
-            updateStats(leaderboard);
         }
-    } catch (error) {
-        console.error("Error loading leaderboard:", error);
+
+        updateStats(leaderboard);
+
+    } catch (err) {
+        console.error("Error loading leaderboard:", err);
+        lbTableSection.style.display = "block";
         leaderboardBody.innerHTML = '<div class="lb-empty">⚠️ Error loading data. Check connection.</div>';
+    } finally {
+        syncEl.classList.remove("active");
     }
 }
 
+// ── Render Podium ─────────────────────────────────────────────
+function renderPodium(top3, container) {
+    container.innerHTML = "";
+
+    const cfg = [
+        { medal: "🥇", cls: "gold",   label: "◆ RANK #1" },
+        { medal: "🥈", cls: "silver", label: "◆ RANK #2" },
+        { medal: "🥉", cls: "bronze", label: "◆ RANK #3" },
+    ];
+
+    // Classic podium order: silver(1) · gold(0) · bronze(2)
+    const order = top3.length === 1 ? [0]
+                : top3.length === 2 ? [1, 0]
+                : [1, 0, 2];
+
+    order.forEach(idx => {
+        if (!top3[idx]) return;
+        const entry = top3[idx];
+        const { medal, cls, label } = cfg[idx];
+
+        const card = document.createElement("div");
+        card.className = `podium-card ${cls}`;
+
+        card.innerHTML = `
+            <div class="podium-medal">${medal}</div>
+            <div class="podium-team">${escapeHTML(entry.teamId)}</div>
+            <div class="podium-divider"></div>
+            <div class="podium-stat">
+                <span class="podium-stat-label">UPLINKS USED</span>
+                <span class="podium-stat-val">${entry.attemptsUsed}<span class="pdm-sub"> / 15</span></span>
+            </div>
+            <div class="podium-stat">
+                <span class="podium-stat-label">TIME</span>
+                <span class="podium-stat-val">${formatTime(entry.timeTaken)}</span>
+            </div>
+            <div class="podium-base">${label}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ── Update Stats Strip ────────────────────────────────────────
 function updateStats(leaderboard) {
-    // Total winners
-    document.getElementById("totalWinners").innerText = leaderboard.length;
-    
-    // Average attempts
+    document.getElementById("totalWinners").innerText = leaderboard.length || "0";
+
     if (leaderboard.length > 0) {
-        const totalAttempts = leaderboard.reduce((sum, entry) => sum + entry.attemptsUsed, 0);
-        const avgAttempts = (totalAttempts / leaderboard.length).toFixed(1);
-        document.getElementById("avgAttempts").innerText = avgAttempts;
-        
-        // Last winner
-        const lastWinner = leaderboard[0]; // Assuming most recent first
-        document.getElementById("lastWinner").innerText = lastWinner.teamId;
+        const total = leaderboard.reduce((s, e) => s + e.attemptsUsed, 0);
+        document.getElementById("avgAttempts").innerText = (total / leaderboard.length).toFixed(1);
+        const fastest = leaderboard.reduce((mn, e) => e.timeTaken < mn ? e.timeTaken : mn, Infinity);
+        document.getElementById("fastestTime").innerText = formatTime(fastest);
     } else {
-        document.getElementById("avgAttempts").innerText = "0";
-        document.getElementById("lastWinner").innerText = "-";
+        document.getElementById("avgAttempts").innerText = "—";
+        document.getElementById("fastestTime").innerText  = "—";
     }
 }
 
+// ── Refresh Button ────────────────────────────────────────────
 function refreshLeaderboard() {
-    const refreshBtn = document.querySelector('.lb-btn-cyan');
-    if (refreshBtn) {
-        refreshBtn.innerHTML = '⟳ REFRESHING…';
-        refreshBtn.disabled = true;
-    }
+    const btn = document.querySelector('.lb-btn-cyan');
+    if (btn) { btn.innerHTML = '⟳ REFRESHING…'; btn.disabled = true; }
     loadLeaderboard().finally(() => {
         setTimeout(() => {
-            if (refreshBtn) {
-                refreshBtn.innerHTML = '⟳ REFRESH';
-                refreshBtn.disabled = false;
-            }
-        }, 600);
+            if (btn) { btn.innerHTML = '⟳ REFRESH'; btn.disabled = false; }
+        }, 700);
     });
 }
 
-function goBack() {
-    window.location.href = '/';  // Redirect to main game page
-}
+function goBack() { window.location.href = '/'; }
 
-// Simple escape function
-function escapeHTML(str) {
-    if (!str) return str;
-    return str.replace(/[&<>"]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;';
-        return m;
-    });
-}
+// Auto-refresh every 15s
+setInterval(loadLeaderboard, 15000);
 
-// Auto-refresh every 30 seconds
-setInterval(() => {
-    loadLeaderboard();
-}, 30000);
-
-function formatTime(seconds) {
-    if (!seconds) return "00:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-// Load leaderboard on page load
 document.addEventListener("DOMContentLoaded", loadLeaderboard);

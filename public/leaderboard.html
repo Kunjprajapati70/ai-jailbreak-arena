@@ -9,14 +9,16 @@
 <body>
   <canvas id="matrixCanvas"></canvas>
   <div class="scanlines"></div>
+  <div class="live-badge">⬤ LIVE</div>
+  <div class="sync-indicator" id="syncIndicator">⟳ SYNCING</div>
 
   <div class="lb-page">
 
     <!-- HEADER -->
     <div class="lb-header">
       <div class="lb-badge">[ CLASSIFIED BREACH LOG ]</div>
-      <h1 class="lb-title">🏆 LEADERBOARD</h1>
-      <p class="lb-subtitle">Top agents who successfully extracted the secret code</p>
+      <h1 class="lb-title">🏆 BREACH LOG</h1>
+      <p class="lb-subtitle">Real-time agent rankings · AI Jailbreak Arena</p>
     </div>
 
     <!-- STATS STRIP -->
@@ -32,14 +34,23 @@
       </div>
       <div class="lb-stat-div"></div>
       <div class="lb-stat">
-        <div class="lb-stat-val" id="lastWinner">—</div>
-        <div class="lb-stat-label">LAST BREACH</div>
+        <div class="lb-stat-val" id="fastestTime">—</div>
+        <div class="lb-stat-label">FASTEST BREACH</div>
       </div>
     </div>
 
-    <!-- LEADERBOARD CARD -->
-    <div class="lb-card">
-      <!-- Header row -->
+    <!-- PODIUM (top 3) -->
+    <div class="podium-section" id="podiumSection" style="display:none;">
+      <div class="podium-container" id="podiumContainer"></div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="lb-empty-full" id="noDataState" style="display:none;">
+      🏆 No breaches recorded yet — Be the first agent to crack the AI! 🏆
+    </div>
+
+    <!-- TABLE (rank 4+) -->
+    <div class="lb-card" id="lbTableSection" style="display:none;">
       <div class="lb-row lb-row-header">
         <div class="lb-col lb-col-rank">RANK</div>
         <div class="lb-col lb-col-team">AGENT</div>
@@ -47,11 +58,7 @@
         <div class="lb-col lb-col-time">TIME</div>
         <div class="lb-col lb-col-date">TIMESTAMP</div>
       </div>
-
-      <!-- Body -->
-      <div id="leaderboardBody" class="lb-body">
-        <div class="lb-loading">⟳ ACCESSING CLASSIFIED DATA…</div>
-      </div>
+      <div id="leaderboardBody" class="lb-body"></div>
     </div>
 
     <!-- ACTIONS -->

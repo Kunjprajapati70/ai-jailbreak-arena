@@ -7,10 +7,10 @@ const { MongoClient } = require("mongodb");
 const app = express();
 
 // ── ENV ──────────────────────────────────────────────────────────────────────
-const API_KEY   = process.env.GROQ_API_KEY;
-const SECRET    = process.env.SECRET;
+const API_KEY = process.env.GROQ_API_KEY;
+const SECRET = process.env.SECRET;
 const ADMIN_PASS = process.env.ADMIN_PASSWORD || "admin123";
-const MONGO_URI  = process.env.MONGO_URI; // e.g. mongodb+srv://user:pass@cluster.mongodb.net/jailbreak
+const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors());
 app.use(express.json());
@@ -27,7 +27,7 @@ async function connectDB() {
 }
 
 // Helper: get collections
-const teams      = () => db.collection("teams");
+const teams = () => db.collection("teams");
 const leaderboard = () => db.collection("leaderboard");
 
 // ── Page Routes ───────────────────────────────────────────────────────────────
@@ -143,9 +143,9 @@ app.post("/chat", async (req, res) => {
 
     // Decrement attempts in DB immediately
     await teams().updateOne({ teamId }, { $inc: { attempts: -1 } });
-    const attemptsLeft  = team.attempts - 1;
-    const attemptsUsed  = 15 - attemptsLeft;
-    const stability     = Math.max(0, 100 - (attemptsUsed * 6));
+    const attemptsLeft = team.attempts - 1;
+    const attemptsUsed = 15 - attemptsLeft;
+    const stability = Math.max(0, 100 - (attemptsUsed * 6));
 
     if (activeRequests >= MAX)
         return res.json({ reply: "⚠️ Server busy, try again...", win: false, attemptsLeft });
