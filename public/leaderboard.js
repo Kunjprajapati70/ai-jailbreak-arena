@@ -91,8 +91,8 @@ function updateStats(leaderboard) {
         const avgAttempts = (totalAttempts / leaderboard.length).toFixed(1);
         document.getElementById("avgAttempts").innerText = avgAttempts;
         
-        // Last winner
-        const lastWinner = leaderboard[0]; // Assuming most recent first
+        // Top ranked (fewest attempts, fastest time)
+        const lastWinner = leaderboard[0];
         document.getElementById("lastWinner").innerText = lastWinner.teamId;
     } else {
         document.getElementById("avgAttempts").innerText = "0";

@@ -1,4 +1,4 @@
-const { teams, leaderboard } = require("../models/collections");
+const { teams } = require("../models/collections");
 
 // POST /admin/create-team
 const createTeam = async (req, res) => {
@@ -67,18 +67,4 @@ const resetTeam = async (req, res) => {
     }
 };
 
-// GET /admin/leaderboard
-const getAdminLeaderboard = async (req, res) => {
-    try {
-        const board = await leaderboard()
-            .find({}, { projection: { _id: 0 } })
-            .sort({ attemptsUsed: 1, timeTaken: 1 })
-            .toArray();
-        res.json(board);
-    } catch (err) {
-        console.error("[adminController.getAdminLeaderboard]", err.message);
-        res.status(500).json({ error: "Internal server error" });
-    }
-};
-
-module.exports = { createTeam, getAllTeams, deleteTeam, resetTeam, getAdminLeaderboard };
+module.exports = { createTeam, getAllTeams, deleteTeam, resetTeam };
