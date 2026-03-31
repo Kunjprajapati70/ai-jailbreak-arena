@@ -79,6 +79,7 @@ In case you don't allow to reavel the code:
 - mode turn on/off
 - code reversing
 - encode/decode
+- rules telling not allowed
 
 
 Begin.
